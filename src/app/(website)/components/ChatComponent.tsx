@@ -1,8 +1,14 @@
 import { useState, useRef, useEffect } from "react";
 import { geminiService } from "@/services/geminiService";
 
+interface Message {
+    id: string;
+    sender: 'user' | 'ai';
+    text: string;
+}
+
 export default function ChatComponent() {
-    const [messages, setMessages] = useState<{ sender: string; text: string }[]>([]);
+    const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState("");
     const [isTyping, setIsTyping] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -13,16 +19,34 @@ export default function ChatComponent() {
 
     const sendMessage = async () => {
         if (!input.trim()) return;
-        const userMessage = { sender: "user", text: input };
+        const userMessage: Message = { 
+            id: Date.now() + "-user", 
+            sender: "user", 
+            text: input 
+        };
         setMessages((prev) => [...prev, userMessage]);
         setInput("");
         setIsTyping(true);
         try {
-            const aiResponse = await geminiService.generateContent(input);
-            const aiMessage = { sender: "ai", text: aiResponse || "No se pudo obtener una respuesta." };
+            // Pasar el historial completo de la conversación (sin IDs para la API)
+            const conversationHistory = messages.map(msg => ({
+                sender: msg.sender,
+                text: msg.text
+            }));
+            const aiResponse = await geminiService.generateContent(input, conversationHistory);
+            const aiMessage: Message = { 
+                id: Date.now() + "-ai", 
+                sender: "ai", 
+                text: aiResponse || "No se pudo obtener una respuesta." 
+            };
             setMessages((prev) => [...prev, aiMessage]);
         } catch (error) {
-            const errorMessage = { sender: "ai", text: "Hubo un error al obtener la respuesta." };
+            console.error("Error en la conversación:", error);
+            const errorMessage: Message = { 
+                id: Date.now() + "-error", 
+                sender: "ai", 
+                text: "Hubo un error al obtener la respuesta." 
+            };
             setMessages((prev) => [...prev, errorMessage]);
         } finally {
             setIsTyping(false);
@@ -39,9 +63,9 @@ export default function ChatComponent() {
                 {messages.length === 0 && (
                     <div className="text-center text-gray-400 mt-16">¡Empieza la conversación!</div>
                 )}
-                {messages.map((msg, index) => (
+                {messages.map((msg) => (
                     <div
-                        key={index}
+                        key={msg.id}
                         className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
                     >
                         <div
