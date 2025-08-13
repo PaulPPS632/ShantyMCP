@@ -4,6 +4,7 @@ import { useState } from "react";
 import { GoGear } from "react-icons/go";
 import { IoChatbubbleOutline } from "react-icons/io5";
 import { MdOutlineStorefront } from "react-icons/md";
+import ChatComponent from "./components/ChatComponent";
 
 function Page() {
     const [tab, setTab] = useState("chat");
@@ -27,6 +28,9 @@ function Page() {
             <Tab key="configuracion" title={<div className="flex items-center space-x-2"><GoGear /><span className="text-xs">Configuracion</span></div>} />
         </Tabs>
         <span className="text-black">{tab}</span>
+        {tab === "chat" && <ChatComponent />}
+        {/* {tab === "tienda" && <StoreComponent />}
+        {tab === "configuracion" && <SettingsComponent />} */}
       </section>
     );
 }
