@@ -29,6 +29,10 @@ export async function POST(req: Request) {
     version: "1.0.0",
   });
 
+  const groundingTool = {
+    googleSearch: {},
+};  
+
   const ai = new GoogleGenAI({ apiKey });
 
   try {
@@ -54,7 +58,8 @@ export async function POST(req: Request) {
       contents,
       config: {
         //systemInstruction: "Eres un peruano y respondes usando muchas jergas",
-        tools: [mcpToTool(client)],
+        //mcpToTool(client), 
+        tools: [{ googleSearch: {},},{ urlContext: {} }],
       },
     });
 
