@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { GoogleGenAI, mcpToTool } from "@google/genai";
+import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 
 interface Message {
   sender: 'user' | 'ai';
@@ -16,7 +17,7 @@ export async function POST(req: Request) {
   if (!apiKey) {
     return NextResponse.json({ error: "Missing API key" }, { status: 500 });
   }
-
+  /*
   const serverParams = new StdioClientTransport({
     command: "node",
     args: [
@@ -31,12 +32,28 @@ export async function POST(req: Request) {
 
   const groundingTool = {
     googleSearch: {},
-};  
+  };  
+*/
+
+  // google sheets
+  const transport = new SSEClientTransport(
+    new URL("http://localhost:8787/sse"), {
+      eventSourceInit: {
+        withCredentials: true,
+        headers: {
+          Authorization: `Bearer ${userToken}`, // tu token desde el front
+        },
+      },
+  });
+  const clientsheets = new Client({ name: "Google Sheets", version: "1.0.0" });
+  await clientsheets.connect(transport);
+  const myMcpToolSheets = mcpToTool(clientsheets);
+
 
   const ai = new GoogleGenAI({ apiKey });
 
   try {
-    await client.connect(serverParams);
+    //await client.connect(serverParams);
 
     // Convertir el historial de conversación al formato de Gemini
     const contents = [];
@@ -59,7 +76,7 @@ export async function POST(req: Request) {
       config: {
         //systemInstruction: "Eres un peruano y respondes usando muchas jergas",
         //mcpToTool(client), 
-        tools: [{ googleSearch: {},},{ urlContext: {} }],
+        tools: [myMcpToolSheets],
       },
     });
 
